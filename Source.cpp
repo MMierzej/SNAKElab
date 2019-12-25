@@ -53,6 +53,36 @@ int navigate_menu(int k, int choice, bool& proceed)
 	return choice;
 }
 
+bool exit_game()
+{
+	int exit = 1;
+	bool proceed = false;
+	do
+	{
+		cout << endl << endl << "     Exit?" << endl;
+		switch (exit)
+		{
+		case 0:
+		{
+			cout << endl << "   > Yes < ";
+			cout << endl << "     No     ";
+			cout << endl << "     ";
+			break;
+		}
+		case 1:
+		{
+			cout << endl << "     Yes    ";
+			cout << endl << "   > No  < ";
+			cout << endl << "     ";
+			break;
+		}
+		}
+		exit = navigate_menu(2, (exit + 1), proceed) - 1;
+		system("cls");
+	} while (!proceed);
+	return exit;
+}
+
 bool exit_prompt()
 {
 	int exit = 1;
@@ -419,14 +449,19 @@ void print_map(int** snake, int* slength, int** fruit, int side, int hmf)
 	cout << "*";
 }
 
-char latest_key(char direction)
+char latest_key(char direction, char& previous, bool& pause)
 {
 	if (_kbhit())
 	{
-		char previous = direction;
+		previous = direction;
 		direction = _getch();
 
-		if (direction != 'w' && direction != 'a' && direction != 's' && direction != 'd')
+		if (direction == 'p')
+		{
+			pause = true;
+			direction = previous;
+		}
+		else if (direction != 'w' && direction != 'a' && direction != 's' && direction != 'd')
 			direction = previous;
 		else
 		{
@@ -454,7 +489,7 @@ char latest_key(char direction)
 	return direction;
 }
 
-void generate_fruit(int** fruit, int** snake, int* slength, int side, int hmf)
+void generate_fruit(int** fruit, int** snake, int* slength, int side, int& hmf)
 {
 	bool keepgoing = true;
 	int k = 0;
@@ -565,9 +600,10 @@ void sizeplusplus(int** snake, int* slength, int*** psnake)
 	tmp = nullptr;
 }
 
-bool logic(char direction, int** snake, int** fruit, int* slength, int& score, int hmf, bool walls, int side, bool& do_it)
+bool logic(char& direction, char previous, int** snake, int** fruit, int* slength, int& score, int hmf, bool walls, int side, bool& do_it)
 {
 	bool gameover = false;
+
 	for (int i = (*slength) - 1; i > 0; i--)
 	{
 		snake[i][0] = snake[i - 1][0];
@@ -649,8 +685,8 @@ void game(string nickname, int side, bool walls, int hmf, int speed)
 	srand(time(0));
 	time_t start_time = time(0);
 	int score = 0, duration = 0, * slength = new int(3);
-	char direction = 'd';
-	bool gameover = false, do_it = false;
+	char direction = 'd', previous = 'x';
+	bool gameover = false, do_it = false, pause = false;
 	int** fruit = new int* [hmf];
 	for (int i = 0; i < hmf; i++)
 	{
@@ -674,8 +710,8 @@ void game(string nickname, int side, bool walls, int hmf, int speed)
 	while (!gameover)
 	{
 		duration = time(0) - start_time;
-		direction = latest_key(direction);
-		gameover = logic(direction, snake, fruit, slength, score, hmf, walls, side, do_it);
+		direction = latest_key(direction, previous, pause);
+		gameover = logic(direction, previous, snake, fruit, slength, score, hmf, walls, side, do_it);
 		if (do_it)
 		{
 			sizeplusplus(snake, slength, &snake);
@@ -693,13 +729,21 @@ void game(string nickname, int side, bool walls, int hmf, int speed)
 				generate_fruit(fruit, snake, slength, side, hmf);
 			do_it = false;
 		}
+		
 		if (!gameover)
 		{
+			if (pause)
+			{
+				system("cls");
+				gameover = (exit_game()+1)%2;
+				pause = false;
+			}
 			panel(nickname, score, duration);
 			print_map(snake, slength, fruit, side, hmf);
 			Sleep(speed);
 		}
 		system("cls");
+		
 	}
 	koniec_hry(nickname, score, duration, hmf);
 	print_map(snake, slength, fruit, side, hmf);

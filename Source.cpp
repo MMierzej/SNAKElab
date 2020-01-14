@@ -2,7 +2,9 @@
 #include <conio.h>
 #include <time.h>
 #include <windows.h>
-#include <stdlib.h>
+#include <cstdlib>
+#include <fstream>
+#include <string>
 using namespace std;
 
 void koniec_hry(string nickname, int score, int duration, int hmf)
@@ -680,11 +682,11 @@ bool logic(char& direction, char previous, int** snake, int** fruit, int* slengt
 	return gameover;
 }
 
-void game(string nickname, int side, bool walls, int hmf, int speed)
+void game(string nickname, int side, bool walls, int hmf, int speed, int& score)
 {
 	srand(time(0));
 	time_t start_time = time(0);
-	int score = 0, duration = 0, * slength = new int(3);
+	int duration = 0, * slength = new int(3);
 	char direction = 'd', previous = 'x';
 	bool gameover = false, do_it = false, pause = false;
 	int** fruit = new int* [hmf];
@@ -765,9 +767,11 @@ void game(string nickname, int side, bool walls, int hmf, int speed)
 
 int main()
 {
-	int choice = 1, choice_2 = 1, side = 10, walls = 0, hmf = 1, speed = 400;//hmf == how many fruits
+	int choice = 1, choice_2 = 1, side = 10, walls = 0, hmf = 1, speed = 400, score = 0;//hmf == how many fruits
 	bool exit = false;
 	string nickname = "snakelab";
+	fstream score_list;
+	
 	do
 	{
 		choice = main_menu();
@@ -777,10 +781,42 @@ int main()
 			choice_2 = secondary_menu(nickname, side, walls, hmf, speed);
 			if (choice_2 % 2)
 			{
-				game(nickname, side, walls, hmf, speed);
+				game(nickname, side, walls, hmf, speed, score);
+				score_list.open("score_list.txt", ios::out | ios::app);
+				score_list << nickname << endl << score << endl;
+				score_list.close();
 			}
 			break;
 		case 2://RANKING
+			score_list.open("score_list.txt", ios::in);
+			if (!score_list.good())
+			{
+				cout << "   There are no scores yet." << endl << endl;
+				cout << "   Press any key to go back to main menu...";
+				_getch();
+				system("cls");
+			}
+			else
+			{
+				string line;
+				int line_nr = 1;
+				while (getline(score_list, line))
+				{
+					if (line_nr % 2)
+					{
+						cout << "   " << line <<"   ";
+					}
+					else
+					{
+						cout << line << endl << endl;
+					}
+					line_nr++;
+				}
+				cout << "   Press any key to go back to main menu...";
+				_getch();
+				system("cls");
+			}
+			score_list.close();
 			break;
 		case 3://EXIT
 			exit = !(exit_prompt());
